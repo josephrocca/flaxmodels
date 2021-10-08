@@ -4,7 +4,7 @@ import os
 import glob
 
 
-def save_checkpoint(ckpt_dir, state_G, state_D, params_ema_G, pl_mean, config, step, epoch, fid_score=None, keep=2):
+def save_checkpoint(ckpt_dir, state_G, state_D, params_ema_G, pl_mean, config, step, epoch, fid_score=None, keep=10):
     """
     Saves checkpoint.
 
