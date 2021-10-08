@@ -37,20 +37,22 @@ def get_data(data_dir, img_size, img_channels, num_classes, num_devices, batch_s
         (tf.data.Dataset): Dataset.
     """
 
-    def pre_process(serialized_example):
-        feature = {'height': tf.io.FixedLenFeature([], tf.int64),
-                   'width': tf.io.FixedLenFeature([], tf.int64),
-                   'channels': tf.io.FixedLenFeature([], tf.int64),
-                   'image': tf.io.FixedLenFeature([], tf.string),
-                   'label': tf.io.FixedLenFeature([], tf.int64)}
-        example = tf.io.parse_single_example(serialized_example, feature)
+    def pre_process(example):
+        # feature = {'height': tf.io.FixedLenFeature([], tf.int64),
+        #            'width': tf.io.FixedLenFeature([], tf.int64),
+        #            'channels': tf.io.FixedLenFeature([], tf.int64),
+        #            'image': tf.io.FixedLenFeature([], tf.string),
+        #            'label': tf.io.FixedLenFeature([], tf.int64)}
+        # example = tf.io.parse_single_example(serialized_example, feature)
 
-        height = tf.cast(example['height'], dtype=tf.int64)
-        width = tf.cast(example['width'], dtype=tf.int64)
-        channels = tf.cast(example['channels'], dtype=tf.int64)
+        # height = tf.cast(example['height'], dtype=tf.int64)
+        # width = tf.cast(example['width'], dtype=tf.int64)
+        # channels = tf.cast(example['channels'], dtype=tf.int64)
 
-        image = tf.io.decode_raw(example['image'], out_type=tf.uint8)
-        image = tf.reshape(image, shape=[height, width, channels])
+        # image = tf.io.decode_raw(example['image'], out_type=tf.uint8)
+        # image = tf.reshape(image, shape=[height, width, channels])
+
+        image = example['image']
 
         image = tf.cast(image, dtype='float32')
         image = tf.image.resize(image, size=[img_size, img_size], method='bicubic', antialias=True)
@@ -68,13 +70,20 @@ def get_data(data_dir, img_size, img_channels, num_classes, num_devices, batch_s
         data['label'] = tf.reshape(data['label'], [num_devices, -1, num_classes])
         return data
 
-    print('Loading TFRecord...')
-    with open(os.path.join(data_dir, 'dataset_info.json'), 'r') as fin:
-        dataset_info = json.load(fin)
+    # print('Loading TFRecord...')
+    # with open(os.path.join(data_dir, 'dataset_info.json'), 'r') as fin:
+    #    dataset_info = json.load(fin)
 
-    ds = tf.data.TFRecordDataset(filenames=os.path.join(data_dir, 'dataset.tfrecords'))
+    # ds = tf.data.TFRecordDataset(filenames=os.path.join(data_dir, 'dataset.tfrecords'))
+    # ds = ds.shuffle(min(dataset_info['num_examples'], shuffle_buffer))
+
+    builder = tfds.ImageFolder(data_dir)
+    print(builder.info)
+    dataset_info = builder.info
+    ds = builder.as_dataset(split='fake_split', shuffle_files=True)
+    num_examples = builder.info.splits['fake_split'].num_examples
     
-    ds = ds.shuffle(min(dataset_info['num_examples'], shuffle_buffer))
+    ds = ds.shuffle(min(num_examples, shuffle_buffer))
     ds = ds.map(pre_process, tf.data.AUTOTUNE)
     ds = ds.batch(batch_size * num_devices, drop_remainder=True)
     ds = ds.map(shard, tf.data.AUTOTUNE)
