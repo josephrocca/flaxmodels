@@ -78,10 +78,10 @@ def get_data(data_dir, img_size, img_channels, num_classes, num_devices, batch_s
     # ds = ds.shuffle(min(dataset_info['num_examples'], shuffle_buffer))
 
     builder = tfds.ImageFolder(data_dir)
-    print(builder.info)
     ds = builder.as_dataset(split='fake_split', shuffle_files=True)
     num_examples = builder.info.splits['fake_split'].num_examples
     dataset_info = {'num_examples': num_examples, 'num_classes': 1}
+    print(f"num_examples: {num_examples}")
     
     ds = ds.shuffle(min(num_examples, shuffle_buffer))
     ds = ds.map(pre_process, tf.data.AUTOTUNE)
